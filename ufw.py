@@ -63,13 +63,23 @@ class Ufw(object):
 
             remove(self.PID_FILE)
 
-    def rule(self, rule, ttl):
+    def rule(self, new_rule, ttl):
         cal = Calendar()
-        timestamp = mktime(cal.parse(ttl)[0])
+        existed_rules = {}
+        existed_rules[new_rule] = mktime(cal.parse(ttl)[0])
         try:
-            with open(self.RULES_FILE, 'a') as f:
-                f.write(str(timestamp) + ' ' + rule + '\n')
-            self.ufw_execute(rule)
+            self.ufw_execute(new_rule)
+            for line in open(self.RULES_FILE, 'r'):
+                timestamp, rule = line.strip("\n").split(' ', 1)
+                if rule not in existed_rules:
+                    existed_rules[rule] = float(timestamp)
+                else:
+                    if existed_rules[rule] < float(timestamp):
+                        existed_rules[new_rule] = float(timestamp)
+
+            with open(self.RULES_FILE, 'w') as f:
+                for rule in existed_rules.keys():
+                    f.write(str(existed_rules[rule]) + ' ' + rule + '\n')
         except CalledProcessError as error:
             self.ufw_error(error)
         except IOError:
