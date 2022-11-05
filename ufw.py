@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from argparse import ArgumentParser
 from datetime import datetime
 from os import getpid, makedirs, path, remove
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--status', action = 'store_true', help = 'show rule list with expirations')
     parser.add_argument('-c', '--clean', action = 'store_true', help = 'clean up expired rules')
     parser.add_argument('-r', '--rule', help = 'rule to be added to `ufw`')
-    parser.add_argument('-t', '--ttl', default = '30 days', help = 'time to live for the rule')
+    parser.add_argument('-t', '--ttl', default = '24 hours', help = 'time to live for the rule')
     args = parser.parse_args()
 
     ufw = Ufw()
