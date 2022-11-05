@@ -1,11 +1,13 @@
+#!/usr/bin/env python3
+
 import socket
 from sanic import Sanic
 from sanic.response import json
 from os import unlink, path, chmod
 from socket import error as socket_error
-from socket import socket, AF_UNIX, SOCK_STREAM, inet_aton
 from subprocess import CalledProcessError, check_output, STDOUT
 from apscheduler.schedulers.background import BackgroundScheduler
+from socket import socket, AF_UNIX, AF_INET, SOCK_STREAM, inet_pton, inet_aton
 
 sched = BackgroundScheduler()
 app = Sanic(name="ufw")
@@ -23,13 +25,10 @@ def listen_sock():
 @app.route("/")
 async def deny_ip(request):
     ip = request.args.get("ip")
-    try:
-        # Validate IP address
-        inet_aton(ip)
-        add_ufw_deny_rule(ip)
-        return json({"message": "OK"})
-    except socket_error:
+    if not is_valid_ipv4_address(ip):
         return json({"error": "invalid IP"})
+    add_ufw_deny_rule(ip)
+    return json({"message": "OK"})
 
 @app.main_process_stop
 async def termination(app):
@@ -41,6 +40,20 @@ def add_ufw_deny_rule(ip):
         check_output(f"python ufw.py --rule 'deny from {ip}'", stderr = STDOUT, shell = True)
     except CalledProcessError as error:
         print(error)
+
+def is_valid_ipv4_address(address):
+    try:
+        inet_pton(AF_INET, address)
+    except AttributeError:
+        try:
+            inet_aton(address)
+        except socket_error:
+            return False
+        return address.count('.') == 3
+    except socket_error:
+        return False
+
+    return True
 
 def clean_ufw_expired_rules():
     try:

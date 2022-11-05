@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-from argparse import ArgumentParser
-from datetime import datetime
-from os import getpid, makedirs, path, remove
-from parsedatetime import Calendar
-from shutil import move
-from subprocess import CalledProcessError, check_output, STDOUT
+
 from sys import exit
+from shutil import move
+from datetime import datetime
 from time import mktime, time
+from parsedatetime import Calendar
+from argparse import ArgumentParser
+from os import getpid, makedirs, path, remove
+from subprocess import CalledProcessError, check_output, STDOUT
 
 
 class Ufw(object):
@@ -20,9 +21,7 @@ class Ufw(object):
                 print("Expiration\t\tRule")
                 print('=' * 80)
 
-                # Loops through the rules lines
                 for line in open(self.RULES_FILE, 'r'):
-                    # Breaks apart line into expiration timestamp and rule
                     timestamp, rule = line.strip("\n").split(' ', 1)
                     print(self.str_time(float(timestamp)) + "\t" + rule)
             except IOError:
@@ -31,26 +30,20 @@ class Ufw(object):
             self.error('there are no rules to display')
 
     def clean(self):
-        # Checks for PID file
         if path.exists(self.PID_FILE):
             self.error('ufw-rules is already running')
         else:
-            # Creates the PID file
             try:
                 with open(self.PID_FILE, 'w') as f:
                     f.write(str(getpid()))
             except IOError:
                 self.error('unable to create PID file: ' + self.PID_FILE)
 
-            # Checks for the rules file
             if path.exists(self.RULES_FILE):
-                # Opens the temporary rules file
                 try:
                     with open(self.TMP_RULES_FILE, 'a') as tmp_f:
                         current_time = time()
-                        # Loops through the rules lines
                         for line in open(self.RULES_FILE, 'r'):
-                            # Breaks apart line into expiration timestamp and rule
                             timestamp, rule = line.strip("\n").split(' ', 1)
 
                             # Checks if rule has expired
@@ -60,7 +53,6 @@ class Ufw(object):
                             else:
                                 self.ufw_execute('delete ' + rule)
                                 print(self.str_time(time()) + "\tdeleted rule\t" + rule)
-                    # Moves the tmp file to the rules file
                     move(self.TMP_RULES_FILE, self.RULES_FILE)
 
                 except CalledProcessError as error:
@@ -69,15 +61,11 @@ class Ufw(object):
                 except IOError:
                     self.error('unable to read/write rules file')
 
-                # Removes the PID
-                remove(self.PID_FILE)
+            remove(self.PID_FILE)
 
     def rule(self, rule, ttl):
-        # Converts the TTL to a timestamp
         cal = Calendar()
         timestamp = mktime(cal.parse(ttl)[0])
-
-        # Writes the rule to the rules file
         try:
             with open(self.RULES_FILE, 'a') as f:
                 f.write(str(timestamp) + ' ' + rule + '\n')
