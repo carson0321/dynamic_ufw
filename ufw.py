@@ -69,13 +69,14 @@ class Ufw(object):
         existed_rules[new_rule] = mktime(cal.parse(ttl)[0])
         try:
             self.ufw_execute(new_rule)
-            for line in open(self.RULES_FILE, 'r'):
-                timestamp, rule = line.strip("\n").split(' ', 1)
-                if rule not in existed_rules:
-                    existed_rules[rule] = float(timestamp)
-                else:
-                    if existed_rules[rule] < float(timestamp):
-                        existed_rules[new_rule] = float(timestamp)
+            if path.exists(self.RULES_FILE):
+                for line in open(self.RULES_FILE, 'r'):
+                    timestamp, rule = line.strip("\n").split(' ', 1)
+                    if rule not in existed_rules:
+                        existed_rules[rule] = float(timestamp)
+                    else:
+                        if existed_rules[rule] < float(timestamp):
+                            existed_rules[new_rule] = float(timestamp)
 
             with open(self.RULES_FILE, 'w') as f:
                 for rule in existed_rules.keys():
