@@ -1,6 +1,6 @@
 [Unit]
 Description=Dynamic UFW
-After=network.target
+After=network.target redis.service
 
 [Service]
 User=root

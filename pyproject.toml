@@ -10,6 +10,7 @@ python = "^3.9"
 sanic = "^22.9.0"
 parsedatetime = "^2.6"
 apscheduler = "^3.9.1"
+redis = "^4.3.4"
 
 
 [build-system]

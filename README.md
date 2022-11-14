@@ -1,10 +1,11 @@
 # Dynamic UFW
 
-This script allows you to add rules to ufw (Uncomplicated Firewall) with a time to live. It uses `/usr/local/share/ufw-rules` file to save the rules. It's designed as a socket server with a background scheduler to regularly refresh. After TTL, the status will be cleared.
+This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(time to live). It's saved into Redis, and designed as a socket server with a background scheduler to regularly refresh. After TTL, the status will be cleared.
 
 ## Environment
 
 * ufw 0.36
+* redis 5.0.7
 * asdf 0.10.2
 * python 3.10.8 (installed by asdf)
 * poetry 1.2.2 (installed by asdf)
@@ -32,8 +33,6 @@ This script allows you to add rules to ufw (Uncomplicated Firewall) with a time 
 * With default TTL (24 hours)
   * `curl --unix-socket /tmp/sanic.sock http://localhost/?ip=1.2.3.4`
   * `sudo ufw status`
-  * `cat /usr/local/share/ufw-rules`
 * With customized TTL
   * `curl --unix-socket /tmp/sanic.sock "http://localhost/?ip=3.3.3.3&ex=10%20seconds"`
   * `sudo ufw status`
-  * `cat /usr/local/share/ufw-rules`

@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
+import redis
 import socket
-from lib.ufw import Ufw
+from time import mktime
 from sanic import Sanic
 from sanic.log import logger
 from sanic.response import json
+from parsedatetime import Calendar
 from os import unlink, path, chmod
 from socket import error as socket_error
 from apscheduler.schedulers.background import BackgroundScheduler
 from socket import socket, AF_UNIX, AF_INET, SOCK_STREAM, inet_pton, inet_aton
+
+from lib.ufw import Ufw
+from lib.redis_client import redis_client
 
 ufw = Ufw()
 sched = BackgroundScheduler()
@@ -24,6 +29,11 @@ def listen_sock():
 
 @app.route("/")
 async def allow_ip(request):
+    try:
+        redis_client.ping()
+    except redis.ConnectionError:
+        return json({"error": "redis connection refused"})
+
     ip = request.args.get("ip")
     if not is_valid_ipv4_address(ip):
         return json({"error": "invalid IP"})
@@ -32,8 +42,15 @@ async def allow_ip(request):
     ex = "24 hours"
     if request.args.get("ex") is not None:
         ex = request.args.get("ex")
-    ufw.rule(f"allow from {ip}", ex)
-    logger.info(f"add 'allow from {ip}' with {ex} to ufw table")
+
+    # set now when parsing failed
+    timestamp = mktime(Calendar().parse(ex)[0])
+    redis_key = f"dynamic_ufw:{ip}"
+    if not redis_client.hexists(redis_key, "allow"):
+        ufw.add_rule(f"allow from {ip}")
+    redis_client.hset(redis_key, "allow", str(timestamp))
+    redis_client.expire(redis_key, int(timestamp))
+    logger.info(f"add 'allow from {ip}' with {ex} to ufw table successfully")
     return json({"message": "OK"})
 
 @app.main_process_stop
