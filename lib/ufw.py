@@ -1,33 +1,15 @@
 #!/usr/bin/env python3
-
-from sys import exit
 from shutil import move
 from datetime import datetime
 from time import mktime, time
 from parsedatetime import Calendar
-from argparse import ArgumentParser
-from os import getpid, makedirs, path, remove
+from os import getpid, path, remove
 from subprocess import CalledProcessError, check_output, STDOUT
-
 
 class Ufw(object):
     PID_FILE = '/var/run/ufw-rules.pid'
     RULES_FILE = '/usr/local/share/ufw-rules'
     TMP_RULES_FILE = '/tmp/ufw-rules'
-
-    def status(self):
-        if path.exists(self.RULES_FILE):
-            try:
-                print("Expiration\t\tRule")
-                print('=' * 80)
-
-                for line in open(self.RULES_FILE, 'r'):
-                    timestamp, rule = line.strip("\n").split(' ', 1)
-                    print(self.str_time(float(timestamp)) + "\t" + rule)
-            except IOError:
-                self.error('unable to read from the rules file: ' + self.RULES_FILE)
-        else:
-            self.error('there are no rules to display')
 
     def clean(self):
         if path.exists(self.PID_FILE):
@@ -88,7 +70,6 @@ class Ufw(object):
 
     def error(self, message):
         print('errors: ' + message)
-        exit(2)
 
     def str_time(self, time):
         return str(datetime.fromtimestamp(time))
@@ -98,22 +79,3 @@ class Ufw(object):
 
     def ufw_error(self, error):
         self.error('ufw: ' + error.output.decode(encoding = 'UTF-8'))
-
-
-if __name__ == '__main__':
-    parser = ArgumentParser(description = 'Apply `ufw` rules with TTL')
-    parser.add_argument('-s', '--status', action = 'store_true', help = 'show rule list with expirations')
-    parser.add_argument('-c', '--clean', action = 'store_true', help = 'clean up expired rules')
-    parser.add_argument('-r', '--rule', help = 'rule to be added to `ufw`')
-    parser.add_argument('-t', '--ttl', default = '24 hours', help = 'time to live for the rule')
-    args = parser.parse_args()
-
-    ufw = Ufw()
-    if args.status:
-        ufw.status()
-    elif args.clean:
-        ufw.clean()
-    elif args.rule:
-        ufw.rule(args.rule, args.ttl)
-    else:
-        parser.print_help()

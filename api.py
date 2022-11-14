@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-
 import socket
+from lib.ufw import Ufw
 from sanic import Sanic
 from sanic.response import json
 from os import unlink, path, chmod
 from socket import error as socket_error
-from subprocess import CalledProcessError, check_output, STDOUT
 from apscheduler.schedulers.background import BackgroundScheduler
 from socket import socket, AF_UNIX, AF_INET, SOCK_STREAM, inet_pton, inet_aton
 
+ufw = Ufw()
 sched = BackgroundScheduler()
 app = Sanic(name="ufw")
 server_socket = "/tmp/sanic.sock"
@@ -27,19 +27,13 @@ async def deny_ip(request):
     ip = request.args.get("ip")
     if not is_valid_ipv4_address(ip):
         return json({"error": "invalid IP"})
-    add_ufw_deny_rule(ip)
+    ufw.rule(f"deny from {ip}", "24 hours")
     return json({"message": "OK"})
 
 @app.main_process_stop
 async def termination(app):
     unlink(server_socket)
     sched.shutdown()
-
-def add_ufw_deny_rule(ip):
-    try:
-        check_output(f"python ufw.py --rule 'deny from {ip}'", stderr = STDOUT, shell = True)
-    except CalledProcessError as error:
-        print(error)
 
 def is_valid_ipv4_address(address):
     try:
@@ -55,13 +49,7 @@ def is_valid_ipv4_address(address):
 
     return True
 
-def clean_ufw_expired_rules():
-    try:
-        check_output("python ufw.py --clean", stderr = STDOUT, shell = True)
-    except CalledProcessError as error:
-        print(error)
-
 if __name__ == "__main__":
-    sched.add_job(clean_ufw_expired_rules, "interval", seconds=1)
+    sched.add_job(ufw.clean, "interval", seconds=1)
     sched.start()
     app.run(sock=listen_sock())
