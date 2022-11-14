@@ -1,0 +1,12 @@
+[Unit]
+Description=Dynamic UFW
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/home/ubuntu/dynamic_ufw
+Environment="PATH=/home/ubuntu/dynamic_ufw/.venv/bin:$PATH"
+ExecStart=/home/ubuntu/dynamic_ufw/.venv/bin/python api.py
+
+[Install]
+WantedBy=multi-user.target

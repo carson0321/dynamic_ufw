@@ -2,6 +2,7 @@
 import socket
 from lib.ufw import Ufw
 from sanic import Sanic
+from sanic.log import logger
 from sanic.response import json
 from os import unlink, path, chmod
 from socket import error as socket_error
@@ -19,15 +20,20 @@ def listen_sock():
     sock = socket(AF_UNIX, SOCK_STREAM)
     sock.bind(server_socket)
     chmod(server_socket, 0o777)
-
     return sock
 
 @app.route("/")
-async def deny_ip(request):
+async def allow_ip(request):
     ip = request.args.get("ip")
     if not is_valid_ipv4_address(ip):
         return json({"error": "invalid IP"})
-    ufw.rule(f"deny from {ip}", "24 hours")
+
+    # expired time (rule's TTL)
+    ex = "24 hours"
+    if request.args.get("ex") is not None:
+        ex = request.args.get("ex")
+    ufw.rule(f"allow from {ip}", ex)
+    logger.info(f"add 'allow from {ip}' with {ex} to ufw table")
     return json({"message": "OK"})
 
 @app.main_process_stop
