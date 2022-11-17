@@ -7,26 +7,28 @@ from lib.redis_client import redis_client
 
 class Ufw(object):
     def clean(self):
+        for key in redis_client.scan_iter("dynamic:ufw:*"):
+            ip = key.split(":")[-1]
+            rule = f"allow from {ip}"
+            timestamp = float(redis_client.hget(key, "allow_ttl"))
+            if time() >= float(timestamp):
+                self.del_rule(rule)
+                redis_client.hdel(key, "allow_ttl")
+                logger.info(f"ufw deleted rule\t {rule}")
+            # else:
+            #     logger.info(f"ufw skipped rule\t {rule}")
+
+    def add_rule(self, rule):
         try:
-            current_time = time()
-            for key in redis_client.scan_iter("dynamic_ufw:*"):
-                ip = key.split(":")[-1]
-                rule = f"allow from {ip}"
-                timestamp = float(redis_client.hget(key, "allow"))
-                if current_time >= float(timestamp):
-                    self.ufw_execute(f"delete {rule}")
-                    redis_client.hdel(key, "allow")
-                    logger.info(f"deleted rule\t {rule}")
-                # else:
-                #     logger.info(f"skipped rule\t {rule}")
+            self.execute(rule)
         except CalledProcessError as error:
             logger.error("unable to execute ufw command: " + str(error))
 
-    def add_rule(self, new_rule):
+    def del_rule(self, rule):
         try:
-            self.ufw_execute(new_rule)
+            self.execute(f"delete {rule}")
         except CalledProcessError as error:
             logger.error("unable to execute ufw command: " + str(error))
 
-    def ufw_execute(self, rule):
-        check_output("/usr/sbin/ufw " + rule, stderr = STDOUT, shell = True)
+    def execute(self, rule):
+        return check_output("/usr/sbin/ufw " + rule, stderr = STDOUT, shell = True)

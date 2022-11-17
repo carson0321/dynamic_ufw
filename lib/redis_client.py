@@ -1,8 +1,8 @@
+#!/usr/bin/env python3
 import redis
 
 REDIS_IP="127.0.0.1"
 REDIS_PORT=6379
-# REDIS_PASSWORD=""
 
 # clear all data: redis-cli FLUSHALL
 class RedisClient(object):

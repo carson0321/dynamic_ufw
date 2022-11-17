@@ -12,9 +12,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from socket import socket, AF_UNIX, AF_INET, SOCK_STREAM, inet_pton, inet_aton
 
 from lib.ufw import Ufw
+from lib.ipset import Ipset
 from lib.redis_client import redis_client
 
 ufw = Ufw()
+ipset = Ipset()
 sched = BackgroundScheduler()
 app = Sanic(name="ufw")
 server_socket = "/tmp/sanic.sock"
@@ -42,15 +44,23 @@ async def allow_ip(request):
     ex = "24 hours"
     if request.args.get("ex") is not None:
         ex = request.args.get("ex")
-
     # set now when parsing failed
     timestamp = mktime(Calendar().parse(ex)[0])
-    redis_key = f"dynamic_ufw:{ip}"
-    if not redis_client.hexists(redis_key, "allow"):
-        ufw.add_rule(f"allow from {ip}")
-    redis_client.hset(redis_key, "allow", str(timestamp))
+
+    if request.args.get("type") == "ipset":
+        redis_key = f"dynamic:ipset:{ip}"
+        if not redis_client.hexists(redis_key, "allow_ttl"):
+            ipset.add_ip(ip)
+    # default use ufw
+    else:
+        redis_key = f"dynamic:ufw:{ip}"
+        if not redis_client.hexists(redis_key, "allow_ttl"):
+            ufw.add_rule(f"allow from {ip}")
+
+    redis_client.hset(redis_key, "allow_ttl", str(timestamp))
     redis_client.expire(redis_key, int(timestamp))
-    logger.info(f"add 'allow from {ip}' with {ex} to ufw table successfully")
+
+    logger.info(f"add 'allow from {ip}' with {ex} successfully")
     return json({"message": "OK"})
 
 @app.main_process_stop
@@ -73,6 +83,7 @@ def is_valid_ipv4_address(address):
     return True
 
 if __name__ == "__main__":
-    sched.add_job(ufw.clean, "interval", seconds=1)
+    sched.add_job(ufw.clean, "interval", seconds=1, max_instances=5)
+    sched.add_job(ipset.clean, "interval", seconds=1, max_instances=5)
     sched.start()
     app.run(sock=listen_sock())
