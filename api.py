@@ -56,9 +56,7 @@ async def allow_ip(request):
         redis_key = f"dynamic:ufw:{ip}"
         if not redis_client.hexists(redis_key, "allow_ttl"):
             ufw.add_rule(f"allow from {ip}")
-
     redis_client.hset(redis_key, "allow_ttl", str(timestamp))
-    redis_client.expire(redis_key, int(timestamp))
 
     logger.info(f"add 'allow from {ip}' with {ex} successfully")
     return json({"message": "OK"})

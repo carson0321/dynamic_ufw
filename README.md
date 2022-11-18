@@ -27,7 +27,7 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
   * copy `misc/dynamic-ufw.service` to `/etc/systemd/system/`
   * `sudo systemctl start dynamic-ufw.service`
 
-  (Note: rename working directory and install dependencies)
+  (Note: Rename working directory and install dependencies)
 
 ## How to test
 
@@ -38,7 +38,7 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
   * `curl --unix-socket /tmp/sanic.sock "http://localhost/?ip=3.3.3.3&ex=10%20seconds"`
   * `sudo ufw status`
 
-## Other
+## Others
 
 * Use ipset to allow IP
   * Create allowable IP list (`ipset create allowlist hash:ip hashsize 4096`)
@@ -66,3 +66,5 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
     sudo iptables -D FORWARD -m set --match-set allowlist src -j ACCEPT
     sudo ipset destroy allowlist
   ```
+
+* `curl --unix-socket /tmp/sanic.sock "http://localhost/?ip=3.3.3.3&ex=10%20seconds&type=ipset"`
