@@ -11,8 +11,11 @@ class Ipset(object):
             ip = key.split(":")[-1]
             timestamp = float(redis_client.hget(key, "allow_ttl"))
             if time() >= float(timestamp):
-                self.del_ip(ip)
-                redis_client.hdel(key, "allow_ttl")
+                try:
+                    self.execute(f"del allowlist {ip}")
+                    redis_client.hdel(key, "allow_ttl")
+                except CalledProcessError as error:
+                    logger.error("unable to execute ipset command: " + str(error))
                 logger.info(f"ipset deleted ip\t {ip}")
             # else:
             #     logger.info(f"ipset skipped ip\t {ip}")
@@ -20,12 +23,6 @@ class Ipset(object):
     def add_ip(self, ip):
         try:
             self.execute(f"add allowlist {ip}")
-        except CalledProcessError as error:
-            logger.error("unable to execute ipset command: " + str(error))
-
-    def del_ip(self, ip):
-        try:
-            self.execute(f"del allowlist {ip}")
         except CalledProcessError as error:
             logger.error("unable to execute ipset command: " + str(error))
 

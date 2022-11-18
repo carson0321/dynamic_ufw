@@ -12,8 +12,11 @@ class Ufw(object):
             rule = f"allow from {ip}"
             timestamp = float(redis_client.hget(key, "allow_ttl"))
             if time() >= float(timestamp):
-                self.del_rule(rule)
-                redis_client.hdel(key, "allow_ttl")
+                try:
+                    self.execute(f"delete {rule}")
+                    redis_client.hdel(key, "allow_ttl")
+                except CalledProcessError as error:
+                    logger.error("unable to execute ufw command: " + str(error))
                 logger.info(f"ufw deleted rule\t {rule}")
             # else:
             #     logger.info(f"ufw skipped rule\t {rule}")
@@ -21,12 +24,6 @@ class Ufw(object):
     def add_rule(self, rule):
         try:
             self.execute(rule)
-        except CalledProcessError as error:
-            logger.error("unable to execute ufw command: " + str(error))
-
-    def del_rule(self, rule):
-        try:
-            self.execute(f"delete {rule}")
         except CalledProcessError as error:
             logger.error("unable to execute ufw command: " + str(error))
 

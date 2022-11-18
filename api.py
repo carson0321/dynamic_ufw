@@ -81,7 +81,7 @@ def is_valid_ipv4_address(address):
     return True
 
 if __name__ == "__main__":
-    sched.add_job(ufw.clean, "interval", seconds=1, max_instances=5)
-    sched.add_job(ipset.clean, "interval", seconds=1, max_instances=5)
+    sched.add_job(ufw.clean, "interval", seconds=1, max_instances=1)
+    sched.add_job(ipset.clean, "interval", seconds=1, max_instances=1)
     sched.start()
     app.run(sock=listen_sock())
