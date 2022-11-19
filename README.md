@@ -1,6 +1,6 @@
 # Dynamic UFW
 
-This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(time to live). It's saved into Redis, and designed as a socket server with a background scheduler to regularly refresh. After TTL, the status will be cleared automatically.
+This project allows you to add ip to ufw (Uncomplicated Firewall) whitelist with a TTL(time to live). It saves into Redis and is designed as a socket server with a background scheduler to regularly refresh. It can set customized TTL (default 24 hours). After expiration time, the status will be cleared automatically. It also uses ipset to implement this, but the default uses ufw.
 
 ## Environment
 
@@ -9,8 +9,9 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
 * asdf 0.10.2
 * python 3.10.8 (installed by asdf)
 * poetry 1.2.2 (installed by asdf)
+* ipset 7.5 (`sudo apt install ipset`)
 
-## How to use
+## How to set up
 
 * Open redis/ufw (`sudo systemctl start redis.service` and `sudo ufw enable`)
 * Console:
@@ -29,7 +30,7 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
 
   (Note: Rename working directory and install dependencies)
 
-## How to test
+## How to use/test
 
 * With default TTL (24 hours)
   * `curl --unix-socket /tmp/sanic.sock http://localhost/?ip=1.2.3.4`
@@ -67,4 +68,5 @@ This script allows you to add rules to UFW (Uncomplicated Firewall) with a TTL(t
     sudo ipset destroy allowlist
   ```
 
-* `curl --unix-socket /tmp/sanic.sock "http://localhost/?ip=3.3.3.3&ex=10%20seconds&type=ipset"`
+* `curl --unix-socket /tmp/sanic.sock "http://localhost/?ip=3.3.3.3&ex=30%20seconds&type=ipset"`
+  * `sudo ipset list`

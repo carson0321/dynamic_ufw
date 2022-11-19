@@ -14,9 +14,9 @@ class Ipset(object):
                 try:
                     self.execute(f"del allowlist {ip}")
                     redis_client.hdel(key, "allow_ttl")
+                    logger.info(f"ipset deleted ip\t {ip}")
                 except CalledProcessError as error:
                     logger.error("unable to execute ipset command: " + str(error))
-                logger.info(f"ipset deleted ip\t {ip}")
             # else:
             #     logger.info(f"ipset skipped ip\t {ip}")
 

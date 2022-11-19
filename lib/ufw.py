@@ -15,9 +15,9 @@ class Ufw(object):
                 try:
                     self.execute(f"delete {rule}")
                     redis_client.hdel(key, "allow_ttl")
+                    logger.info(f"ufw deleted rule\t {rule}")
                 except CalledProcessError as error:
                     logger.error("unable to execute ufw command: " + str(error))
-                logger.info(f"ufw deleted rule\t {rule}")
             # else:
             #     logger.info(f"ufw skipped rule\t {rule}")
 

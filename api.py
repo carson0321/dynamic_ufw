@@ -47,18 +47,20 @@ async def allow_ip(request):
     # set now when parsing failed
     timestamp = mktime(Calendar().parse(ex)[0])
 
-    if request.args.get("type") == "ipset":
+    rule_type = request.args.get("type")
+    if rule_type == "ipset":
         redis_key = f"dynamic:ipset:{ip}"
         if not redis_client.hexists(redis_key, "allow_ttl"):
             ipset.add_ip(ip)
     # default use ufw
     else:
+        rule_type = "ufw"
         redis_key = f"dynamic:ufw:{ip}"
         if not redis_client.hexists(redis_key, "allow_ttl"):
             ufw.add_rule(f"allow from {ip}")
     redis_client.hset(redis_key, "allow_ttl", str(timestamp))
 
-    logger.info(f"add 'allow from {ip}' with {ex} successfully")
+    logger.info(f"{rule_type} add 'allow from {ip}' with {ex} successfully")
     return json({"message": "OK"})
 
 @app.main_process_stop
